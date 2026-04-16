@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, User, AlertCircle, Loader2, CheckCircle2, Chrome, Github, Apple, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, AlertCircle, Loader2, CheckCircle2, Apple, ShieldCheck } from 'lucide-react';
 import { z } from 'zod';
 import type { UserRole } from '@/types';
 
