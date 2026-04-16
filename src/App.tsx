@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import VendorListPage from "@/pages/VendorListPage";
 import RFQListPage from "@/pages/RFQListPage";
@@ -37,6 +39,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<ProtectedPage><DashboardPage /></ProtectedPage>} />
               <Route path="/analytics" element={<ProtectedPage roles={['ADMIN', 'PROCUREMENT_MANAGER']}><AnalyticsPage /></ProtectedPage>} />
