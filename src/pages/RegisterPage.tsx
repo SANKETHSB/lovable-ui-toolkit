@@ -152,7 +152,7 @@ const RegisterPage = () => {
               <motion.button key={provider} whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}
                 onClick={() => handleOAuth(provider)} type="button"
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border bg-secondary/50 text-foreground hover:bg-secondary transition-all text-sm font-medium">
-                <Icon size={18} />
+                {typeof Icon === 'function' && Icon.length === 0 ? <Icon /> : <Icon size={18} />}
                 <span className="hidden sm:inline">{label}</span>
               </motion.button>
             ))}
