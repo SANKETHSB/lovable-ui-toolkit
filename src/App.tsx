@@ -39,6 +39,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<ProtectedPage><DashboardPage /></ProtectedPage>} />
               <Route path="/analytics" element={<ProtectedPage roles={['ADMIN', 'PROCUREMENT_MANAGER']}><AnalyticsPage /></ProtectedPage>} />
