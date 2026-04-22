@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import StatusBadge from '@/components/StatusBadge';
 import { ShoppingCart, Download, ChevronRight } from 'lucide-react';
 import type { PurchaseOrder } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { exportTextReport, mockVmsBackend } from '@/services/mockVmsBackend';
 
 const MOCK_POS: PurchaseOrder[] = [
   { id: 1, poNumber: 'PO-2026-001', rfqId: 4, vendorId: 1, quotationId: 1, totalCost: 485000, status: 'RECEIVED', deliveryDate: '2026-04-10', generatedAt: '2026-03-15' },
@@ -13,7 +16,15 @@ const MOCK_POS: PurchaseOrder[] = [
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } };
 
-const POListPage = () => (
+const POListPage = () => {
+  const [pos, setPos] = useState(MOCK_POS);
+  const downloadPo = (po: PurchaseOrder) => exportTextReport(`${po.poNumber}.txt`, po.poNumber, [`RFQ: ${po.rfqId}`, `Vendor: ${po.vendorId}`, `Total: INR ${po.totalCost}`, `Delivery: ${po.deliveryDate}`, `Status: ${po.status}`]);
+  const advanceStatus = async (po: PurchaseOrder) => {
+    const updated = await mockVmsBackend.updatePoStatus(po);
+    setPos(prev => prev.map(item => item.id === po.id ? updated : item));
+    toast({ title: 'PO status updated', description: 'Vendor notification, immutable PO record, and audit log completed.' });
+  };
+  return (
   <div className="space-y-6">
     <div>
       <h1 className="text-2xl font-bold text-foreground">Purchase Orders</h1>
@@ -34,7 +45,7 @@ const POListPage = () => (
             </tr>
           </thead>
           <tbody>
-            {MOCK_POS.map(po => (
+            {pos.map(po => (
               <motion.tr key={po.id} variants={item} className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer group">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -50,10 +61,10 @@ const POListPage = () => (
                 <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">{new Date(po.generatedAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <motion.button whileHover={{ scale: 1.1 }} className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors">
+                    <motion.button whileHover={{ scale: 1.1 }} onClick={() => downloadPo(po)} className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors" aria-label="Download PO">
                       <Download size={14} />
                     </motion.button>
-                    <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    <button onClick={() => advanceStatus(po)} className="p-1 rounded-lg text-muted-foreground hover:text-primary" aria-label="Advance PO status"><ChevronRight size={16} className="group-hover:translate-x-1 transition-all" /></button>
                   </div>
                 </td>
               </motion.tr>
@@ -63,6 +74,7 @@ const POListPage = () => (
       </div>
     </motion.div>
   </div>
-);
+  );
+};
 
 export default POListPage;

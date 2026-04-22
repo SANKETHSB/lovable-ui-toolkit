@@ -16,7 +16,7 @@ const registerSchema = z.object({
     .regex(/[^A-Za-z0-9]/, 'Needs a special character')
     .max(128, 'Password too long'),
   confirmPassword: z.string().min(1, 'Confirm your password'),
-  role: z.enum(['ADMIN', 'PROCUREMENT_MANAGER', 'VENDOR', 'COMPLIANCE_OFFICER'], { errorMap: () => ({ message: 'Select a role' }) }),
+  role: z.enum(['ADMIN', 'PROCUREMENT_MANAGER', 'VENDOR', 'COMPLIANCE_OFFICER']).refine(Boolean, 'Select a role'),
 }).refine(d => d.password === d.confirmPassword, { message: 'Passwords do not match', path: ['confirmPassword'] });
 
 type FormData = { name: string; email: string; password: string; confirmPassword: string; role: string };

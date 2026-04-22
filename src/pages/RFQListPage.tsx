@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import StatusBadge from '@/components/StatusBadge';
-import { FileText, Search, Plus, Clock, ChevronRight } from 'lucide-react';
+import { FileText, Search, Plus, Clock, ChevronRight, RotateCcw, Lock } from 'lucide-react';
 import type { RFQ } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { mockVmsBackend } from '@/services/mockVmsBackend';
 
 const MOCK_RFQS: RFQ[] = [
   { id: 1, rfqNumber: 'RFQ-2026-001', title: 'IT Hardware Procurement - Q2', description: 'Laptops, monitors, peripherals for new office', deadline: '2026-04-30T18:00:00', status: 'OPEN', revisionNumber: 1, createdBy: 2, createdAt: '2026-04-01', items: [{ id: 1, rfqId: 1, itemName: 'Dell Latitude 5540', quantity: 50, unit: 'Units' }, { id: 2, rfqId: 1, itemName: '27" Monitor', quantity: 50, unit: 'Units' }] },
@@ -26,14 +28,36 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } };
 
 const RFQListPage = () => {
+  const [rfqs, setRfqs] = useState(MOCK_RFQS);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', itemName: '', quantity: '1', deadline: '' });
 
-  const filtered = MOCK_RFQS.filter(r => {
+  const filtered = rfqs.filter(r => {
     const matchSearch = r.title.toLowerCase().includes(search.toLowerCase()) || r.rfqNumber.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || r.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const submitRFQ = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const rfq = await mockVmsBackend.createRFQ({ ...form, quantity: Number(form.quantity) }, rfqs);
+      setRfqs(prev => [rfq, ...prev]);
+      setForm({ title: '', itemName: '', quantity: '1', deadline: '' });
+      setShowForm(false);
+      toast({ title: 'RFQ created', description: 'RFQ ID generated, vendors invited, and audit log recorded.' });
+    } catch (error) {
+      toast({ title: 'RFQ validation failed', description: error instanceof Error ? error.message : 'Unable to create RFQ', variant: 'destructive' });
+    }
+  };
+
+  const updateRFQ = async (rfq: RFQ, action: 'close' | 'revise') => {
+    const updated = action === 'close' ? await mockVmsBackend.closeRFQ(rfq) : await mockVmsBackend.reviseRFQ(rfq);
+    setRfqs(prev => prev.map(r => r.id === rfq.id ? updated : r));
+    toast({ title: action === 'close' ? 'RFQ closed' : 'Revision created', description: 'Deadline rules, version history, and notifications applied.' });
+  };
 
   return (
     <div className="space-y-6">
@@ -42,12 +66,22 @@ const RFQListPage = () => {
           <h1 className="text-2xl font-bold text-foreground">RFQs</h1>
           <p className="text-sm text-muted-foreground">Manage requests for quotation</p>
         </div>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowForm(prev => !prev)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm text-primary-foreground"
           style={{ background: 'var(--gradient-primary)' }}>
           <Plus size={16} /> Create RFQ
         </motion.button>
       </div>
+
+      {showForm && (
+        <motion.form initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} onSubmit={submitRFQ} className="glass-card p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+          <input value={form.title} onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))} className="px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground" placeholder="RFQ title" />
+          <input value={form.itemName} onChange={e => setForm(prev => ({ ...prev, itemName: e.target.value }))} className="px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground" placeholder="Item name" />
+          <input type="number" min="1" value={form.quantity} onChange={e => setForm(prev => ({ ...prev, quantity: e.target.value }))} className="px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground" placeholder="Quantity" />
+          <input type="datetime-local" value={form.deadline} onChange={e => setForm(prev => ({ ...prev, deadline: e.target.value }))} className="px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground" />
+          <button className="rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2">Create</button>
+        </motion.form>
+      )}
 
       <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -95,7 +129,11 @@ const RFQListPage = () => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mt-1" />
+                <div className="flex items-center gap-1">
+                  <button onClick={() => updateRFQ(rfq, 'revise')} className="p-1.5 rounded-lg hover:bg-primary/10 text-primary" aria-label="Revise RFQ"><RotateCcw size={14} /></button>
+                  {rfq.status === 'OPEN' && <button onClick={() => updateRFQ(rfq, 'close')} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive" aria-label="Close RFQ"><Lock size={14} /></button>}
+                  <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mt-1" />
+                </div>
               </div>
             </motion.div>
           );
