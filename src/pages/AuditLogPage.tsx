@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Search, Download, User, Clock } from 'lucide-react';
 import type { AuditLog } from '@/types';
+import { mockVmsBackend } from '@/services/mockVmsBackend';
 
 const MOCK_LOGS: AuditLog[] = [
   { id: 1, userId: 1, action: 'VENDOR_APPROVED', entityType: 'Vendor', entityId: 2, timestamp: '2026-04-16T10:30:00', ipAddress: '192.168.1.100' },
@@ -37,7 +38,7 @@ const AuditLogPage = () => {
           <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
           <p className="text-sm text-muted-foreground">Immutable activity trail</p>
         </div>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => mockVmsBackend.exportAuditLogs(filtered)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm border border-border bg-card text-foreground hover:bg-secondary transition-colors">
           <Download size={16} /> Export
         </motion.button>
