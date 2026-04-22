@@ -4,7 +4,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { UserCog, Search, Plus, Lock, Unlock, ChevronRight } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { mockVmsBackend } from '@/services/mockVmsBackend';
+import { backend } from '@/services/backend';
 
 const MOCK_USERS: User[] = [
   { id: 1, name: 'Rajesh Kumar', email: 'rajesh@infosys.com', role: 'ADMIN', isActive: true, isLocked: false, lastLogin: '2026-04-16T10:30:00', createdAt: '2024-06-01' },
@@ -31,7 +31,7 @@ const UserManagementPage = () => {
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const user = await mockVmsBackend.createUser(form, users);
+      const user = await backend.createUser(form, users);
       setUsers(prev => [user, ...prev]);
       setShowForm(false);
       toast({ title: 'User created', description: 'Role assignment, access policy, and audit trail updated.' });

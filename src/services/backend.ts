@@ -27,7 +27,7 @@ export const exportTextReport = (filename: string, title: string, lines: string[
   downloadBlob(filename, 'text/plain;charset=utf-8', [title, `Generated: ${new Date().toISOString()}`, '', ...lines].join('\n'));
 };
 
-export const mockVmsBackend = {
+export const backend = {
   async registerVendor(data: Pick<Vendor, 'companyName' | 'gstNumber' | 'registrationId' | 'email'>, existing: Vendor[]) {
     await wait();
     const companyName = sanitize(data.companyName);

@@ -4,7 +4,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { ShoppingCart, Download, ChevronRight } from 'lucide-react';
 import type { PurchaseOrder } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { exportTextReport, mockVmsBackend } from '@/services/mockVmsBackend';
+import { exportTextReport, backend } from '@/services/backend';
 
 const MOCK_POS: PurchaseOrder[] = [
   { id: 1, poNumber: 'PO-2026-001', rfqId: 4, vendorId: 1, quotationId: 1, totalCost: 485000, status: 'RECEIVED', deliveryDate: '2026-04-10', generatedAt: '2026-03-15' },
@@ -20,7 +20,7 @@ const POListPage = () => {
   const [pos, setPos] = useState(MOCK_POS);
   const downloadPo = (po: PurchaseOrder) => exportTextReport(`${po.poNumber}.txt`, po.poNumber, [`RFQ: ${po.rfqId}`, `Vendor: ${po.vendorId}`, `Total: INR ${po.totalCost}`, `Delivery: ${po.deliveryDate}`, `Status: ${po.status}`]);
   const advanceStatus = async (po: PurchaseOrder) => {
-    const updated = await mockVmsBackend.updatePoStatus(po);
+    const updated = await backend.updatePoStatus(po);
     setPos(prev => prev.map(item => item.id === po.id ? updated : item));
     toast({ title: 'PO status updated', description: 'Vendor notification, immutable PO record, and audit log completed.' });
   };
