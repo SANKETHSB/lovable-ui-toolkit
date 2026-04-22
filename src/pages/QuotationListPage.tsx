@@ -4,7 +4,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { ClipboardList, ChevronRight, Award, Download } from 'lucide-react';
 import type { Quotation } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { exportTextReport, mockVmsBackend } from '@/services/mockVmsBackend';
+import { exportTextReport, backend } from '@/services/backend';
 
 const MOCK_QUOTATIONS: Quotation[] = [
   { id: 1, rfqId: 1, vendorId: 1, totalPrice: 485000, taxAmount: 87300, currency: 'INR', status: 'SUBMITTED', submittedAt: '2026-04-12T10:00:00', items: [{ id: 1, rfqItemId: 1, unitPrice: 75000, quantity: 50, lineTotal: 375000 }, { id: 2, rfqItemId: 2, unitPrice: 22000, quantity: 50, lineTotal: 110000 }] },
@@ -23,7 +23,7 @@ const QuotationListPage = () => {
 
   const award = async (quotation: Quotation) => {
     try {
-      const updated = await mockVmsBackend.awardQuotation(quotation, window.prompt('Award reason') || '');
+      const updated = await backend.awardQuotation(quotation, window.prompt('Award reason') || '');
       setQuotations(prev => prev.map(q => q.id === quotation.id ? updated : q.status === 'AWARDED' && q.rfqId === quotation.rfqId ? { ...q, status: 'REJECTED' } : q));
       toast({ title: 'RFQ awarded', description: 'Single-vendor award, PO enablement, notification, and audit log completed.' });
     } catch (error) {

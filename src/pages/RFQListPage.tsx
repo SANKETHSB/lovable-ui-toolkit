@@ -4,7 +4,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { FileText, Search, Plus, Clock, ChevronRight, RotateCcw, Lock } from 'lucide-react';
 import type { RFQ } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { mockVmsBackend } from '@/services/mockVmsBackend';
+import { backend } from '@/services/backend';
 
 const MOCK_RFQS: RFQ[] = [
   { id: 1, rfqNumber: 'RFQ-2026-001', title: 'IT Hardware Procurement - Q2', description: 'Laptops, monitors, peripherals for new office', deadline: '2026-04-30T18:00:00', status: 'OPEN', revisionNumber: 1, createdBy: 2, createdAt: '2026-04-01', items: [{ id: 1, rfqId: 1, itemName: 'Dell Latitude 5540', quantity: 50, unit: 'Units' }, { id: 2, rfqId: 1, itemName: '27" Monitor', quantity: 50, unit: 'Units' }] },
@@ -43,7 +43,7 @@ const RFQListPage = () => {
   const submitRFQ = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const rfq = await mockVmsBackend.createRFQ({ ...form, quantity: Number(form.quantity) }, rfqs);
+      const rfq = await backend.createRFQ({ ...form, quantity: Number(form.quantity) }, rfqs);
       setRfqs(prev => [rfq, ...prev]);
       setForm({ title: '', itemName: '', quantity: '1', deadline: '' });
       setShowForm(false);
@@ -54,7 +54,7 @@ const RFQListPage = () => {
   };
 
   const updateRFQ = async (rfq: RFQ, action: 'close' | 'revise') => {
-    const updated = action === 'close' ? await mockVmsBackend.closeRFQ(rfq) : await mockVmsBackend.reviseRFQ(rfq);
+    const updated = action === 'close' ? await backend.closeRFQ(rfq) : await backend.reviseRFQ(rfq);
     setRfqs(prev => prev.map(r => r.id === rfq.id ? updated : r));
     toast({ title: action === 'close' ? 'RFQ closed' : 'Revision created', description: 'Deadline rules, version history, and notifications applied.' });
   };

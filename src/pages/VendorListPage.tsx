@@ -4,7 +4,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { Building2, Search, Filter, ChevronRight, Plus, Check, X } from 'lucide-react';
 import type { Vendor } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { mockVmsBackend } from '@/services/mockVmsBackend';
+import { backend } from '@/services/backend';
 
 const MOCK_VENDORS: Vendor[] = [
   { id: 1, companyName: 'TechCorp Solutions', gstNumber: 'GST29AABCT1234A1ZN', registrationId: 'VR-2026-001', email: 'contact@techcorp.com', phone: '+91 98765 43210', address: 'Bangalore, India', status: 'APPROVED', complianceStatus: 'COMPLIANT', registrationTimestamp: '2025-08-15', approvedAt: '2025-08-20' },
@@ -34,7 +34,7 @@ const VendorListPage = () => {
   const submitVendor = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const vendor = await mockVmsBackend.registerVendor(form, vendors);
+      const vendor = await backend.registerVendor(form, vendors);
       setVendors(prev => [vendor, ...prev]);
       setForm({ companyName: '', gstNumber: '', registrationId: '', email: '' });
       setShowForm(false);
@@ -46,7 +46,7 @@ const VendorListPage = () => {
 
   const updateVendor = async (vendor: Vendor, action: 'approve' | 'reject') => {
     try {
-      const updated = action === 'approve' ? await mockVmsBackend.approveVendor(vendor) : await mockVmsBackend.rejectVendor(vendor, window.prompt('Rejection reason') || '');
+      const updated = action === 'approve' ? await backend.approveVendor(vendor) : await backend.rejectVendor(vendor, window.prompt('Rejection reason') || '');
       setVendors(prev => prev.map(v => v.id === vendor.id ? updated : v));
       toast({ title: action === 'approve' ? 'Vendor approved' : 'Vendor rejected', description: 'Status notification and immutable audit log recorded.' });
     } catch (error) {

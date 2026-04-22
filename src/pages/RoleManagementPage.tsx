@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Settings, Shield, X, Plus, Trash2 } from 'lucide-react';
 import type { Role } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { mockVmsBackend } from '@/services/mockVmsBackend';
+import { backend } from '@/services/backend';
 
 const MODULES = ['Vendors', 'RFQs', 'Quotations', 'POs', 'Audit', 'Users', 'Roles', 'Reports'];
 const ROLES = [
@@ -35,7 +35,7 @@ const RoleManagementPage = () => {
   const createRole = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const role = await mockVmsBackend.createRole(form, roles);
+      const role = await backend.createRole(form, roles);
       setRoles(prev => [...prev, role]);
       setShowForm(false);
       toast({ title: 'Role created', description: 'Permission matrix and audit history updated immediately.' });
