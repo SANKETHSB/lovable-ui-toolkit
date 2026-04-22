@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import StatusBadge from '@/components/StatusBadge';
-import { ClipboardList, ChevronRight } from 'lucide-react';
+import { ClipboardList, ChevronRight, Award, Download } from 'lucide-react';
 import type { Quotation } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { exportTextReport, mockVmsBackend } from '@/services/mockVmsBackend';
 
 const MOCK_QUOTATIONS: Quotation[] = [
   { id: 1, rfqId: 1, vendorId: 1, totalPrice: 485000, taxAmount: 87300, currency: 'INR', status: 'SUBMITTED', submittedAt: '2026-04-12T10:00:00', items: [{ id: 1, rfqItemId: 1, unitPrice: 75000, quantity: 50, lineTotal: 375000 }, { id: 2, rfqItemId: 2, unitPrice: 22000, quantity: 50, lineTotal: 110000 }] },
@@ -14,11 +17,30 @@ const MOCK_QUOTATIONS: Quotation[] = [
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } };
 
-const QuotationListPage = () => (
+const QuotationListPage = () => {
+  const [quotations, setQuotations] = useState(MOCK_QUOTATIONS);
+  const lowest = Math.min(...quotations.map(q => q.totalPrice));
+
+  const award = async (quotation: Quotation) => {
+    try {
+      const updated = await mockVmsBackend.awardQuotation(quotation, window.prompt('Award reason') || '');
+      setQuotations(prev => prev.map(q => q.id === quotation.id ? updated : q.status === 'AWARDED' && q.rfqId === quotation.rfqId ? { ...q, status: 'REJECTED' } : q));
+      toast({ title: 'RFQ awarded', description: 'Single-vendor award, PO enablement, notification, and audit log completed.' });
+    } catch (error) {
+      toast({ title: 'Award blocked', description: error instanceof Error ? error.message : 'Unable to award quotation', variant: 'destructive' });
+    }
+  };
+
+  const exportComparison = () => exportTextReport('rfq-comparison.txt', 'RFQ Quotation Comparison', quotations.map(q => `RFQ ${q.rfqId} | Vendor ${q.vendorId} | ${q.currency} ${q.totalPrice} | ${q.status} | Score ${q.weightedScore ?? 'N/A'}`));
+
+  return (
   <div className="space-y-6">
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Quotations</h1>
-      <p className="text-sm text-muted-foreground">View and evaluate vendor quotations</p>
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Quotations</h1>
+        <p className="text-sm text-muted-foreground">View and evaluate vendor quotations</p>
+      </div>
+      <button onClick={exportComparison} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-semibold hover:bg-secondary"><Download size={16} /> Export</button>
     </div>
     <motion.div variants={container} initial="hidden" animate="show" className="glass-card overflow-hidden">
       <div className="overflow-x-auto">
@@ -34,7 +56,7 @@ const QuotationListPage = () => (
             </tr>
           </thead>
           <tbody>
-            {MOCK_QUOTATIONS.map(q => (
+            {quotations.map(q => (
               <motion.tr key={q.id} variants={item} className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer group">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -47,7 +69,7 @@ const QuotationListPage = () => (
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm font-semibold text-foreground">₹{q.totalPrice.toLocaleString()}</td>
+                <td className="px-4 py-3 text-sm font-semibold text-foreground">₹{q.totalPrice.toLocaleString()} {q.totalPrice === lowest && <span className="ml-2 text-xs text-success">Lowest</span>}</td>
                 <td className="px-4 py-3"><StatusBadge status={q.status} /></td>
                 <td className="px-4 py-3 hidden md:table-cell">
                   {q.weightedScore ? (
@@ -58,7 +80,10 @@ const QuotationListPage = () => (
                 </td>
                 <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">{new Date(q.submittedAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3">
-                  <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  <div className="flex items-center gap-1">
+                    {q.status !== 'AWARDED' && <button onClick={() => award(q)} className="p-1.5 rounded-lg hover:bg-success/10 text-success" aria-label="Award quotation"><Award size={14} /></button>}
+                    <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
                 </td>
               </motion.tr>
             ))}
@@ -67,6 +92,7 @@ const QuotationListPage = () => (
       </div>
     </motion.div>
   </div>
-);
+  );
+};
 
 export default QuotationListPage;
