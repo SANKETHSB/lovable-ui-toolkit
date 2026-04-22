@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import StatusBadge from '@/components/StatusBadge';
-import { Building2, Search, Filter, ChevronRight, Plus } from 'lucide-react';
+import { Building2, Search, Filter, ChevronRight, Plus, Check, X } from 'lucide-react';
 import type { Vendor } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { mockVmsBackend } from '@/services/mockVmsBackend';
 
 const MOCK_VENDORS: Vendor[] = [
   { id: 1, companyName: 'TechCorp Solutions', gstNumber: 'GST29AABCT1234A1ZN', registrationId: 'VR-2026-001', email: 'contact@techcorp.com', phone: '+91 98765 43210', address: 'Bangalore, India', status: 'APPROVED', complianceStatus: 'COMPLIANT', registrationTimestamp: '2025-08-15', approvedAt: '2025-08-20' },
@@ -17,14 +19,40 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } };
 
 const VendorListPage = () => {
+  const [vendors, setVendors] = useState(MOCK_VENDORS);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ companyName: '', gstNumber: '', registrationId: '', email: '' });
 
-  const filtered = MOCK_VENDORS.filter(v => {
-    const matchSearch = v.companyName.toLowerCase().includes(search.toLowerCase()) || v.email.toLowerCase().includes(search.toLowerCase());
+  const filtered = vendors.filter(v => {
+    const matchSearch = v.companyName.toLowerCase().includes(search.toLowerCase()) || v.email.toLowerCase().includes(search.toLowerCase()) || v.gstNumber.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || v.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const submitVendor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const vendor = await mockVmsBackend.registerVendor(form, vendors);
+      setVendors(prev => [vendor, ...prev]);
+      setForm({ companyName: '', gstNumber: '', registrationId: '', email: '' });
+      setShowForm(false);
+      toast({ title: 'Vendor submitted', description: 'Pending approval, email verification, and audit logging queued.' });
+    } catch (error) {
+      toast({ title: 'Validation failed', description: error instanceof Error ? error.message : 'Unable to register vendor', variant: 'destructive' });
+    }
+  };
+
+  const updateVendor = async (vendor: Vendor, action: 'approve' | 'reject') => {
+    try {
+      const updated = action === 'approve' ? await mockVmsBackend.approveVendor(vendor) : await mockVmsBackend.rejectVendor(vendor, window.prompt('Rejection reason') || '');
+      setVendors(prev => prev.map(v => v.id === vendor.id ? updated : v));
+      toast({ title: action === 'approve' ? 'Vendor approved' : 'Vendor rejected', description: 'Status notification and immutable audit log recorded.' });
+    } catch (error) {
+      toast({ title: 'Action blocked', description: error instanceof Error ? error.message : 'Unable to update vendor', variant: 'destructive' });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -33,12 +61,23 @@ const VendorListPage = () => {
           <h1 className="text-2xl font-bold text-foreground">Vendors</h1>
           <p className="text-sm text-muted-foreground">Manage vendor registrations and approvals</p>
         </div>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowForm(prev => !prev)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm text-primary-foreground"
           style={{ background: 'var(--gradient-primary)' }}>
           <Plus size={16} /> Register Vendor
         </motion.button>
       </div>
+
+      {showForm && (
+        <motion.form initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} onSubmit={submitVendor} className="glass-card p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+          {(['companyName', 'gstNumber', 'registrationId', 'email'] as const).map(field => (
+            <input key={field} value={form[field]} onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
+              className="px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder={field === 'companyName' ? 'Company Name' : field === 'gstNumber' ? 'GST Number' : field === 'registrationId' ? 'Registration ID' : 'Email'} />
+          ))}
+          <button className="rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2">Submit</button>
+        </motion.form>
+      )}
 
       {/* Filters */}
       <div className="glass-card p-4 flex flex-col sm:flex-row gap-3">
@@ -99,7 +138,13 @@ const VendorListPage = () => {
                     <span className="text-xs text-muted-foreground">{new Date(vendor.registrationTimestamp).toLocaleDateString()}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    <div className="flex items-center justify-end gap-1">
+                      {vendor.status === 'PENDING_APPROVAL' && <>
+                        <button onClick={() => updateVendor(vendor, 'approve')} className="p-1.5 rounded-lg hover:bg-success/10 text-success"><Check size={14} /></button>
+                        <button onClick={() => updateVendor(vendor, 'reject')} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive"><X size={14} /></button>
+                      </>}
+                      <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    </div>
                   </td>
                 </motion.tr>
               ))}
